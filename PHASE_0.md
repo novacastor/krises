@@ -1,0 +1,2 @@
+I build a function to retreive a image dataset, flattened and normalized the dataset, tuned a split ratio for the model, loaded the data into np arrays.
+Everything went according to plan, this phase was relatively easy.

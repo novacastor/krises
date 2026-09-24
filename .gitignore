@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Cached Fashion-MNIST downloads are large and reproducible from the source.
+/data/fashion_mnist/
