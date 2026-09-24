@@ -59,8 +59,17 @@ def save_loss_curves(
     output_path: str | Path,
 ) -> Path:
     """Save training and validation loss curves for one or more runs."""
-    figure, axis = plt.subplots(figsize=(8, 5))
-    for run_name, history in histories.items():
+    columns = 2
+    rows = (len(histories) + columns - 1) // columns
+    figure, axes = plt.subplots(
+        rows,
+        columns,
+        figsize=(columns * 6, rows * 3.5),
+        squeeze=False,
+    )
+    flat_axes = axes.reshape(-1)
+
+    for axis, (run_name, history) in zip(flat_axes, histories.items()):
         epochs = np.arange(1, len(history["train_loss"]) + 1)
         axis.plot(epochs, history["train_loss"], label=f"{run_name} train")
         axis.plot(
@@ -70,13 +79,61 @@ def save_loss_curves(
             label=f"{run_name} validation",
         )
 
-    axis.set_xlabel("Epoch")
-    axis.set_ylabel("Binary cross-entropy")
-    axis.set_title("Logistic regression loss")
-    axis.legend()
-    axis.grid(True, alpha=0.3)
+        axis.set_xlabel("Epoch")
+        axis.set_ylabel("Binary cross-entropy")
+        axis.set_title(f"Learning rate {run_name}")
+        axis.legend()
+        axis.grid(True, alpha=0.3)
+
+    for axis in flat_axes[len(histories) :]:
+        axis.axis("off")
+
+    figure.suptitle("Logistic regression loss")
     figure.tight_layout()
 
+    destination = Path(output_path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(destination, dpi=150)
+    plt.close(figure)
+    return destination
+
+
+def save_confusion_matrix(
+    counts: np.ndarray,
+    output_path: str | Path,
+    class_names: tuple[str, ...] = CLASS_NAMES,
+) -> Path:
+    """Save an annotated confusion matrix; rows are true classes."""
+    if counts.ndim != 2 or counts.shape[0] != counts.shape[1]:
+        raise ValueError("Confusion matrix must be square")
+    if len(class_names) != counts.shape[0]:
+        raise ValueError("Need one class name per matrix row and column")
+
+    figure, axis = plt.subplots(figsize=(9, 8))
+    image = axis.imshow(counts, cmap="Blues")  # (C, C)
+    figure.colorbar(image, ax=axis, label="Number of images")
+    axis.set_xticks(np.arange(len(class_names)), labels=class_names, rotation=45, ha="right")
+    axis.set_yticks(np.arange(len(class_names)), labels=class_names)
+    axis.set_xlabel("Predicted class")
+    axis.set_ylabel("True class")
+    axis.set_title("Validation confusion matrix")
+
+    threshold = counts.max() / 2 if counts.size else 0
+    for true_class in range(counts.shape[0]):
+        for predicted_class in range(counts.shape[1]):
+            value = counts[true_class, predicted_class]
+            text_color = "white" if value > threshold else "black"
+            axis.text(
+                predicted_class,
+                true_class,
+                str(value),
+                ha="center",
+                va="center",
+                color=text_color,
+                fontsize=8,
+            )
+
+    figure.tight_layout()
     destination = Path(output_path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(destination, dpi=150)

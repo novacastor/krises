@@ -29,7 +29,7 @@ def main() -> None:
     )
     print(f"Binary validation shape: {val_x.shape}")
 
-    learning_rates = (0.01, 0.1, 1.0)
+    learning_rates = (0.0001, 0.01, 0.1, 1.0, 10.0)
     histories = {}
     for learning_rate in learning_rates:
         result = train(
